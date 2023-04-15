@@ -1,34 +1,63 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-// Uncomment this line to use console.log
-// import "hardhat/console.sol";
-
-contract Lock {
-    uint public unlockTime;
-    address payable public owner;
-
-    event Withdrawal(uint amount, uint when);
-
-    constructor(uint _unlockTime) payable {
-        require(
-            block.timestamp < _unlockTime,
-            "Unlock time should be in the future"
-        );
-
-        unlockTime = _unlockTime;
-        owner = payable(msg.sender);
+contract ScandalPrediction {
+    struct Vote {
+        uint256 amount;
+        address sender;
     }
 
-    function withdraw() public {
-        // Uncomment this line, and the import of "hardhat/console.sol", to print a log in your terminal
-        // console.log("Unlock time is %o and block timestamp is %o", unlockTime, block.timestamp);
+    enum Result {
+        Yet,
+        Yes,
+        No
+    }
 
-        require(block.timestamp >= unlockTime, "You can't withdraw yet");
-        require(msg.sender == owner, "You aren't the owner");
+    struct Prediction {
+        string title;
+        string description;
+        uint16 minimum;
+        uint256 predictionPeriod;
+        uint256 votingPeriod;
+        uint256 yesAmount;
+        uint256 noAmount;
+        Vote[] yesVote;
+        Vote[] noVote;
+        Result result;
+    }
 
-        emit Withdrawal(address(this).balance, block.timestamp);
+    Prediction[] public predictions;
 
-        owner.transfer(address(this).balance);
+    function addPrediction(
+        string memory title,
+        string memory description,
+        uint16 minimum,
+        uint256 predictionPeriod,
+        uint256 votingPeriod
+    ) public {
+        Prediction storage p = predictions.push();
+        p.title = title;
+        p.description = description;
+        p.minimum = minimum;
+        p.predictionPeriod = predictionPeriod;
+        p.votingPeriod = votingPeriod;
+    }
+
+    function vote(uint256 predectionIndex, bool yes, uint256 amount) public {
+        if (yes) {
+            predictions[predectionIndex].yesAmount += amount;
+            predictions[predectionIndex].yesVote.push(Vote(amount, msg.sender));
+        } else {
+            predictions[predectionIndex].noAmount += amount;
+            predictions[predectionIndex].noVote.push(Vote(amount, msg.sender));
+        }
+    }
+
+    function close(uint256 predectionIndex, bool yes) private {
+        if (yes) {
+            predictions[predectionIndex].result = Result.Yes;
+        } else {
+            predictions[predectionIndex].result = Result.No;
+        }
     }
 }
