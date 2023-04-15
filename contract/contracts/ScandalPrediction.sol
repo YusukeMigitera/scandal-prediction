@@ -28,6 +28,10 @@ contract ScandalPrediction {
 
     Prediction[] public predictions;
 
+    function getPredictions() public view returns (Prediction[] memory) {
+        return predictions;
+    }
+
     function addPrediction(
         string memory title,
         string memory description,
